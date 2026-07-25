@@ -1,2 +1,14 @@
-# hr-payroll-tool
-Internal HR &amp; Payroll management tool with leave tracking and automated payslip generation, built with Express, PostgreSQL and JS.
+# HR & Payroll Tool
+
+Internal HR & Payroll tool — Software Engineering coding challenge.
+
+## Stack
+- Backend: Express (Node.js)
+- Database: PostgreSQL
+- Frontend: HTML/CSS JS
+
+## Status
+In development. See commit history for daily progress.
+
+## Setup
+(Changes coming as the project takes shape.)
