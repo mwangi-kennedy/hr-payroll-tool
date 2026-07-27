@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR & Payroll Tool</title>
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header>
+  <h1>HR & Payroll</h1>
+  <nav>
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="employees">Employees</button>
+    <button class="tab-btn" data-tab="leave">Leave</button>
+    <button class="tab-btn" data-tab="payroll">Payroll</button>
+  </nav>
+</header>
+
+<main>
+  <section id="dashboard" class="tab-panel active">
+    <div class="grid">
+      <div class="card">
+        <h2>Pending Approvals</h2>
+        <div id="pendingApprovalsList" class="loading">Loading…</div>
+      </div>
+      <div class="card">
+        <h2>Who's Out</h2>
+        <div id="whosOutList" class="loading">Loading…</div>
+      </div>
+      <div class="card wide">
+        <h2>Leave Balances</h2>
+        <div id="balancesList" class="loading">Loading…</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="employees" class="tab-panel">
+    <div class="card">
+      <h2>Add Employee</h2>
+      <form id="employeeForm">
+        <input name="name" placeholder="Full name" required>
+        <input name="role" placeholder="Role" required>
+        <select name="team_id" id="teamSelect"><option value="">No team</option></select>
+        <select name="manager_id" id="managerSelect"><option value="">No manager</option></select>
+        <input name="start_date" type="date" required>
+        <input name="salary" type="number" placeholder="Monthly salary" required>
+        <select name="employment_type" required>
+          <option value="full_time">Full-time</option>
+          <option value="part_time">Part-time</option>
+          <option value="contract">Contract</option>
+        </select>
+        <button type="submit">Add Employee</button>
+      </form>
+      <p id="employeeFormMsg"></p>
+    </div>
+
+    <div class="card">
+      <h2>Add Team</h2>
+      <form id="teamForm">
+        <input name="name" placeholder="Team name" required>
+        <button type="submit">Add Team</button>
+      </form>
+    </div>
+
+    <div class="card wide">
+      <h2>Employees</h2>
+      <div id="employeesList" class="loading">Loading…</div>
+    </div>
+
+    <div class="card wide">
+      <h2>Org View</h2>
+      <div id="orgView" class="loading">Loading…</div>
+    </div>
+  </section>
+
+  <section id="leave" class="tab-panel">
+    <div class="card">
+      <h2>Submit Leave Request</h2>
+      <form id="leaveForm">
+        <select name="employee_id" id="leaveEmployeeSelect" required></select>
+        <input name="start_date" type="date" required>
+        <input name="end_date" type="date" required>
+        <select name="leave_type" required>
+          <option value="paid">Paid</option>
+          <option value="unpaid">Unpaid</option>
+        </select>
+        <input name="reason" placeholder="Reason (optional)">
+        <button type="submit">Submit Request</button>
+      </form>
+      <p id="leaveFormMsg"></p>
+    </div>
+
+    <div class="card wide">
+      <h2>All Leave Requests</h2>
+      <div id="allLeaveList" class="loading">Loading…</div>
+    </div>
+  </section>
+
+  <section id="payroll" class="tab-panel">
+    <div class="card">
+      <h2>Generate Payroll</h2>
+      <form id="payrollGenerateForm">
+        <select id="genMonth" required></select>
+        <input id="genYear" type="number" placeholder="Year" required>
+        <button type="submit">Generate Payroll</button>
+      </form>
+      <p id="payrollGenMsg"></p>
+    </div>
+
+    <div class="card wide">
+      <h2>View Payslips for Period</h2>
+      <form id="payrollViewForm">
+        <select id="viewMonth" required></select>
+        <input id="viewYear" type="number" placeholder="Year" required>
+        <button type="submit">View</button>
+      </form>
+      <div id="payslipsList" class="empty">Select a period to view payslips.</div>
+    </div>
+  </section>
+</main>
+
+<script src="/js/api.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>

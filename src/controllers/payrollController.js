@@ -81,4 +81,26 @@ function listPayrollRuns(req, res) {
     res.json(db.prepare('SELECT * FROM payroll_runs ORDER BY period_year DESC, period_month DESC').all());
 }
 
-module.exports = { generatePayroll, getPayrollForPeriod, listPayrollRuns };
+function downloadPayslipsCsv(req, res) {
+    const { year, month } = req.params;
+    const run = db.prepare('SELECT * FROM payroll_runs WHERE period_month = ? AND period_year = ?').get(month, year);
+    if (!run) return res.status(404).json({ error: 'No payroll generated for this period yet' });
+
+    const payslips = db.prepare(`
+        SELECT p.*, e.name, e.role FROM payslips p
+        JOIN employees e ON e.id = p.employee_id
+        WHERE p.payroll_run_id = ?
+    `).all(run.id);
+
+    const header = 'Employee,Role,Gross Pay,Unpaid Leave Days,Tax,Social Security,Net Pay\n';
+    const rows = payslips.map(p =>
+        `"${p.name}","${p.role}",${p.gross_pay},${p.unpaid_leave_days},${p.tax_deduction},${p.social_security_deduction},${p.net_pay}`
+    ).join('\n');
+
+    const filename = `payroll_${year}_${String(month).padStart(2, '0')}.csv`;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(header + rows);
+}
+
+module.exports = { generatePayroll, getPayrollForPeriod, listPayrollRuns, downloadPayslipsCsv };

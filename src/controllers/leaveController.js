@@ -1,4 +1,5 @@
 const db = require('../db');
+const ANNUAL_LEAVE_ALLOCATION_DAYS = 21;
 const { daysBetween, getNoticeDays, MIN_NOTICE_DAYS, TEAM_COVERAGE_THRESHOLD, ESCALATION_DAYS } = require('../services/leaveRules');
 
 function createLeaveRequest(req, res) {
@@ -94,5 +95,28 @@ function decideLeaveRequest(req, res) {
 
     res.json(db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(id));
 }
+function getLeaveBalances(req, res) {
+    const employees = db.prepare('SELECT * FROM employees WHERE is_active = 1').all();
+    const currentYear = new Date().getFullYear();
 
-module.exports = { createLeaveRequest, listLeaveRequests, decideLeaveRequest };
+    const balances = employees.map(emp => {
+        const taken = db.prepare(`
+            SELECT COALESCE(SUM(days_requested), 0) as taken
+            FROM leave_requests
+            WHERE employee_id = ? AND status = 'approved' AND leave_type = 'paid'
+            AND strftime('%Y', start_date) = ?
+        `).get(emp.id, String(currentYear)).taken;
+
+        return {
+            employee_id: emp.id,
+            name: emp.name,
+            allocation: ANNUAL_LEAVE_ALLOCATION_DAYS,
+            taken,
+            balance: ANNUAL_LEAVE_ALLOCATION_DAYS - taken
+        };
+    });
+
+    res.json(balances);
+}
+
+module.exports = { createLeaveRequest, listLeaveRequests, decideLeaveRequest,getLeaveBalances };
