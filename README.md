@@ -1,46 +1,162 @@
 # HR & Payroll Tool
 
-Internal tool for managing employee records, leave requests and payroll, built to replace the spreadsheet + WhatsApp approval chaos growing teams end up with.
-
-**Status:** In active development. Backend core (Employee Records, Leave Management, Payroll) is complete and tested. Frontend dashboard is in progress .
-
----
-
-## Tech Stack
-
-- **Backend:** Express (Node.js)
-- **Database:** SQLite (via `better-sqlite3`)
-- **Frontend:** HTML/CSS/vanilla JS *(in progress)*
-- **Testing:** Jest + Supertest
+A small internal tool for managing employee records, leave requests and payroll replacing spreadsheet-and-WhatsApp workflows with a system that has real business logic behind it.
 
 ---
 
 ## What I Prioritized and Why
 
-The brief noted one or two modules done properly beats three done shallowly. I chose to build all three at moderate-to-full depth, since Leave and Payroll are explicitly meant to interact, and I wanted that interaction to be real rather than stubbed. Backend business logic (the part described as the core of the exercise) was prioritized over frontend polish the API is fully functional and tested; the dashboard is the remaining piece.
+The brief noted that one or two modules done properly beats three done shallowly. I chose to build all three at meaningful depth instead, because Leave and Payroll are explicitly required to interact, and I wanted that interaction to be real and tested rather than stubbed. Within that scope, backend business logic,  the part the brief identifies as the core of the exercise was prioritized over frontend visual design: the API is fully functional, tested and handles every named edge case; the dashboard is functional and covers every required view, but is intentionally simple rather than elaborate.
+
+---
+
+## Tech Stack
+
+| Layer | Choice |
+|---|---|
+| Backend | Express (Node.js) |
+| Frontend | HTML / CSS / JS |
+| Database | SQLite (`better-sqlite3`) |
+| Testing | Jest + Supertest |
+
+---
+
+## Architecture & Approach
+
+The backend follows a simple layered structure: routes handle HTTP concerns, controllers contain request/response logic and a `services/` layer holds pure business logic (tax calculation, leave-rule thresholds) kept separate from database and HTTP code so it can be unit tested directly, without spinning up a server.
+
+```
+HR-PAYROLL-TOOL/
+├── db/
+├── node_modules/
+├── public/
+│   ├── css/
+│   │   └── styles.css
+│   ├── js/
+│   │   ├── api.js
+│   │   └── app.js
+│   └── index.html
+├── scripts/
+├── src/
+│   ├── controllers/
+│   ├── db/
+│   ├── routes/
+│   ├── services/
+│   ├── tests/
+│   ├── app.js
+│   └── server.js
+├── :memory:
+├── .env
+├── .gitignore
+├── package-lock.json
+├── package.json
+└── README.md
+```
+
+The frontend is a single-page dashboard with tab-based navigation, calling the API directly via `fetch` no build step or framework, per the brief's constraints.
+
+---
+
+## Modules
+
+### 1. Employee Records
+
+Employees are stored with name, role, team, manager, start date, salary and employment type. Managers are modeled as a self-referencing relationship (`manager_id` → `employees.id`), which powers a nested org view showing who reports to whom.
+
+Employees are **deactivated, not deleted** a status flag (`is_active`) is flipped rather than removing the row, so that payroll history generated before deactivation remains intact and queryable. This is verified directly in the submitted sample data: a deactivated employee's payslip from before their deactivation is still present and retrievable.
+
+### 2. Leave Management
+
+Employees submit leave requests; managers approve or reject them. Beyond basic CRUD, three safeguards address problems a spreadsheet-based process doesn't catch:
+
+| Problem | Safeguard |
+|---|---|
+| Requests submitted with little warning | Requests with less than 3 days' notice are flagged (`low_notice: true`) rather than blocked visible to the manager, without rigidly rejecting genuine emergencies |
+| A team becoming under-covered | Approval is blocked if it would push more than 50% of an employee's active team onto approved leave at the same time |
+| Requests left unanswered | Any request still pending after 2 days is flagged (`escalated: true`) in the list view |
+
+**Interaction with Payroll:** approved leave marked `unpaid` reduces an employee's effective worked days for any payroll period it overlaps, directly lowering that period's gross pay. This is the mechanism connecting the two modules and is covered by an integration test.
+
+### 3. Payroll
+
+Generates one payslip per active employee for a given month/year: gross pay, statutory deductions and net pay.
+
+**Formula:**
+- Daily rate = monthly salary ÷ calendar days in that month
+- Gross pay = daily rate × (days actually employed in the period − approved unpaid leave days in that period)
+- Tax is calculated on **marginal** income across progressive brackets (not flat on the whole amount):
+
+  | Bracket | Rate |
+  |---|---|
+  | Up to 24,000 | 0% |
+  | 24,000 – 40,000 | 15% |
+  | Above 40,000 | 25% |
+
+- Social security = 6% of gross pay, capped at 2,160 flat
+- Net pay = gross pay − tax − social security
+
+**Edge cases handled and tested:**
+- Mid-month joiners are prorated to their actual employed days within the period
+- An employee whose gross pay falls entirely below the tax threshold pays 0 tax (zero-deduction case)
+- Salaries sitting at a bracket boundary are verified to have no cliff effect, since tax is marginal
+- Regenerating payroll for an already-processed period is blocked (`409 Conflict`)
+
+**Stated assumptions:** calendar days are used as the denominator, not working days; tax brackets and the social security rate are illustrative rather than modeled on a specific country's real tax code.
+
+---
+
+## Frontend
+
+A single dashboard covering:
+- **Pending approvals**, with inline approve/reject controls
+- **Who's out**, showing current and upcoming approved leave
+- - **Employees**, displaying a list of employees, adding an employee and thier team
+- **Leave balances** per employee (fixed annual allocation minus approved paid leave taken)
+- **Payslips for a selected period**, with a form to generate a new payroll run
+
+All list views show an explicit empty state (e.g. "No pending requests") rather than a blank screen, and a loading state while data is being fetched.
+
+---
+
+## What I Added Beyond the Brief
+
+- **Downloadable CSV payslips.** Any generated payroll period can be exported as a CSV directly from the dashboard useful for record-keeping or sharing outside the browser. Chosen over PDF to stay within the project's time budget while still solving the real "I need this offline" need, without introducing a new dependency.
+
+- **Leave balance tracking.** Not explicitly required, but implied by the dashboard spec ("leave balances"); implemented as a fixed annual allocation (21 days) minus approved paid leave taken in the current year.
 
 ---
 
 ## Setup & Running Locally
 
 ```bash
-git clone <https://github.com/mwangi-kennedy/hr-payroll-tool>
+git clone https://github.com/mwangi-kennedy/hr-payroll-tool
 cd hr-payroll-tool
 npm install
 ```
 
-
-Run the migration to create tables:
+Create a `.env` file in the project root:
+```
+DB_PATH=./src/db/database.db
+```
+Create the database schema:
 ```bash
 npm run migrate
 ```
+
+**Optional — load the submitted sample data** (a few employees/teams, leave requests in different states, one generated payroll run) instead of starting empty:
+```bash
+sqlite3 src/db/database.db < db/dump.sql
+```
+Run this immediately after `npm run migrate`, before starting the server.
 
 Start the server:
 ```bash
 npm run dev
 ```
 
-Run tests:
+Visit `http://localhost:3000` for the dashboard.
+
+Run the automated test suite:
 ```bash
 npm test
 ```
@@ -49,81 +165,42 @@ npm test
 
 ## API Reference
 
-### Employees
 | Method | Endpoint | Description |
 |---|---|---|
+| GET | `/api/teams` | List teams |
+| POST | `/api/teams` | Create a team |
 | GET | `/api/employees` | List active employees |
 | POST | `/api/employees` | Create an employee |
-| GET | `/api/employees/org-view` | Nested org chart (who reports to whom) |
-| PATCH | `/api/employees/:id/deactivate` | Deactivate (soft delete payroll history persists) |
-
-### Leave
-| Method | Endpoint | Description |
-|---|---|---|
+| GET | `/api/employees/org-view` | Nested org chart |
+| PATCH | `/api/employees/:id/deactivate` | Deactivate (soft delete) |
 | POST | `/api/leave` | Submit a leave request |
-| GET | `/api/leave?status=pending` | List requests, optionally filtered by status |
+| GET | `/api/leave?status=pending` | List requests, optionally filtered |
+| GET | `/api/leave/balances` | Leave balances per employee |
 | PATCH | `/api/leave/:id/decision` | Approve or reject a request |
-
-### Payroll
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/payroll/generate` | Generate payroll for a `{month, year}` period |
-| GET | `/api/payroll/:year/:month` | Retrieve a generated payroll run |
-| GET | `/api/payroll/runs` | List all generated payroll runs |
-
----
-
-## Leave Management — Problems Identified & Safeguards Built
-
-Spreadsheets don't catch these, so the system enforces them directly:
-
-1. **Insufficient notice.** Requests submitted with less than 3 days' notice are flagged (`low_notice: true`) rather than blocked outright — a manager should see the urgency, but genuine emergencies shouldn't be hard-rejected by the system.
-2. **Team under-coverage.** Approving a request is blocked if more than 50% of that employee's active team would be on approved leave during the same window. This is the "whole team out at once" problem that's invisible in a spreadsheet until it's already happened.
-3. **Unanswered requests.** Any pending request older than 2 days is flagged as `escalated: true` in the list view, so requests don't silently sit unanswered.
-
----
-
-## Payroll — Formula & Assumptions
-
-**Tax:** Progressive brackets, calculated on marginal income (not flat on the whole amount):
-| Bracket | Rate |
-|---|---|
-| Up to 24,000 | 0% |
-| 24,000 – 40,000 | 15% |
-| Above 40,000 | 25% |
-
-**Social Security:** 6% of gross pay, capped at 2,160 flat.
-
-**Proration:** Daily rate = monthly salary ÷ calendar days in that month. Gross pay = daily rate × (days actually worked − approved unpaid leave days in that period). This same daily-rate logic handles both unpaid leave and mid-month joiners, since both are just "fewer effective days worked."
-
-**Edge cases handled (with tests):**
-- Mid-month joiner — prorated to actual days employed within the period
-- Zero-deduction case — an employee on unpaid leave for the entire period nets to exactly 0
-- Salary at a bracket boundary — verified no cliff effect, since tax is marginal
-- Duplicate generation for the same period is blocked (`409` response)
-
-**Assumptions stated plainly:** calendar days are used as the denominator, not working/business days; tax brackets and social security rate are illustrative, not modeled on a specific country's real tax code.
+| POST | `/api/payroll/generate` | Generate payroll for a period |
+| GET | `/api/payroll/:year/:month` | Retrieve a payroll run |
+| GET | `/api/payroll/:year/:month/download-csv` | Download payslips as CSV |
+| GET | `/api/payroll/runs` | List all payroll runs |
 
 ---
 
 ## Testing
 
-Two test suites, focused on the logic the brief calls out as mattering most:
+Two suites, focused on the logic the brief identifies as mattering most:
 
-- `src/tests/leave.test.js` — leave request validation and notice-period flagging
-- `src/tests/payroll.test.js` — tax calculation (including bracket boundaries), social security capping and full payroll generation covering mid-month joiner, zero-deduction, and duplicate-run cases
+- `src/tests/leave.test.js` — request validation, notice-period flagging
+- `src/tests/payroll.test.js` — tax calculation across brackets and boundaries, social security capping, and full payroll generation covering mid-month joiner, zero-deduction, and duplicate-run cases
+
+```bash
+npm test
+```
 
 ---
 
-## What's Left
-
-- Frontend dashboard: pending approvals, who's out/when, leave balances, payslips by period
-- Submit/approve leave and generate-payroll controls with empty/loading states
-- SQL dump export (schema + sample data) for submission
-- Additional test coverage on the org-hierarchy and deactivate logic
-
 ## What I'd Improve With More Time
 
-- Leave balance tracking (accrual, not just request/approve)
-- Configurable tax brackets and social security rules instead of hardcoded constants
-- Authentication/roles (currently no login — anyone can hit any endpoint)
+- Leave balances currently use a fixed annual allocation rather than true accrual over time
+- Tax brackets and social security rate are hardcoded rather than configurable
+- No authentication/roles, any client can currently call any endpoint
+- PDF payslip export instead of CSV, for a more polished offline document
+- The team-coverage threshold (50%) is fixed rather than configurable per team
