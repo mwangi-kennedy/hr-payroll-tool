@@ -140,7 +140,9 @@ DB_PATH=./src/db/database.db
 ```
 Create the database schema:
 ```bash
-npm run migrate
+npm install
+sqlite3 src/db/database.db < db/dump.sql
+npm run dev
 ```
 
 **Optional — load the submitted sample data** (a few employees/teams, leave requests in different states, one generated payroll run) instead of starting empty:
