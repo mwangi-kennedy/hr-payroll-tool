@@ -30,15 +30,19 @@ async function generatePayroll(req, res) {
         const periodStart = `${year}-${String(month).padStart(2, '0')}-01`;
         const periodEnd = `${year}-${String(month).padStart(2, '0')}-${String(totalDaysInMonth).padStart(2, '0')}`;
 
-        const { rows: employees } = await db.query('SELECT * FROM employees WHERE is_active = 1');
-        const { rows: runRows } = await db.query('INSERT INTO payroll_runs (period_month, period_year) VALUES ($1, $2) RETURNING id', [month, year]);
+        const { rows: employees } = await db.query('SELECT * FROM employees WHERE is_active = 1');        const { rows: runRows } = await db.query('INSERT INTO payroll_runs (period_month, period_year) VALUES ($1, $2) RETURNING id', [month, year]);
         const payrollRunId = runRows[0].id;
 
         const payslips = [];
 
         for (const emp of employees) {
             const empSalary = parseFloat(emp.salary);
-            const workedStart = emp.start_date > periodStart ? emp.start_date : periodStart;
+
+            const empStartDate = emp.start_date instanceof Date
+                ? emp.start_date.toISOString().split('T')[0]
+                : String(emp.start_date).split('T')[0];
+
+            const workedStart = empStartDate > periodStart ? empStartDate : periodStart;
             if (workedStart > periodEnd) continue;
 
             const workedDays = daysBetween(workedStart, periodEnd);

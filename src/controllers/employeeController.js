@@ -31,7 +31,7 @@ async function createEmployee(req, res) {
 
 function buildTree(employees, managerId = null) {
     return employees
-        .filter(e => e.manager_id === managerId)
+        .filter(e => (e.manager_id ?? null) == managerId)
         .map(e => ({
             ...e,
             reports: buildTree(employees, e.id)

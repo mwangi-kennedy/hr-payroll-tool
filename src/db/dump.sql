@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6TdC3e2DEhd4Bpg52TiW3QZ5fa9GnUZb22Ri6uypmdiJqySjIZkBudBU89LrGsa
+\restrict iJitMMFjrQFpDqU2CgjswtymW75JSAFgEoyNhyoycyYmkmoRGaH4itcLghHdg0W
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 18.4
@@ -19,18 +19,39 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE IF EXISTS ONLY public.payslips DROP CONSTRAINT IF EXISTS payslips_payroll_run_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.payslips DROP CONSTRAINT IF EXISTS payslips_employee_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.leave_requests DROP CONSTRAINT IF EXISTS leave_requests_employee_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.employees DROP CONSTRAINT IF EXISTS employees_team_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.employees DROP CONSTRAINT IF EXISTS employees_manager_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.teams DROP CONSTRAINT IF EXISTS teams_pkey;
+ALTER TABLE IF EXISTS ONLY public.teams DROP CONSTRAINT IF EXISTS teams_name_key;
+ALTER TABLE IF EXISTS ONLY public.payslips DROP CONSTRAINT IF EXISTS payslips_pkey;
+ALTER TABLE IF EXISTS ONLY public.payroll_runs DROP CONSTRAINT IF EXISTS payroll_runs_pkey;
+ALTER TABLE IF EXISTS ONLY public.payroll_runs DROP CONSTRAINT IF EXISTS payroll_runs_period_month_period_year_key;
+ALTER TABLE IF EXISTS ONLY public.leave_requests DROP CONSTRAINT IF EXISTS leave_requests_pkey;
+ALTER TABLE IF EXISTS ONLY public.employees DROP CONSTRAINT IF EXISTS employees_pkey;
+ALTER TABLE IF EXISTS public.teams ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.payslips ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.payroll_runs ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.leave_requests ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.employees ALTER COLUMN id DROP DEFAULT;
+DROP SEQUENCE IF EXISTS public.teams_id_seq;
+DROP TABLE IF EXISTS public.teams;
+DROP SEQUENCE IF EXISTS public.payslips_id_seq;
+DROP TABLE IF EXISTS public.payslips;
+DROP SEQUENCE IF EXISTS public.payroll_runs_id_seq;
+DROP TABLE IF EXISTS public.payroll_runs;
+DROP SEQUENCE IF EXISTS public.leave_requests_id_seq;
+DROP TABLE IF EXISTS public.leave_requests;
+DROP SEQUENCE IF EXISTS public.employees_id_seq;
+DROP TABLE IF EXISTS public.employees;
+DROP SCHEMA IF EXISTS public;
 --
 -- Name: public; Type: SCHEMA; Schema: -; Owner: -
 --
 
 CREATE SCHEMA public;
-
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON SCHEMA public IS 'standard public schema';
 
 
 SET default_tablespace = '';
@@ -247,94 +268,6 @@ ALTER TABLE ONLY public.teams ALTER COLUMN id SET DEFAULT nextval('public.teams_
 
 
 --
--- Data for Name: employees; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.employees (id, name, role, team_id, manager_id, start_date, salary, employment_type, is_active) FROM stdin;
-1	Beatrice Gathoni	Software Developer	1	\N	2026-07-27	67999.00	full_time	1
-2	Kennedy Mwangi	Trainer	2	1	2026-07-28	56999.00	full_time	1
-3	Miriam Cheptoo	Intern	\N	\N	2026-07-21	15000.00	contract	1
-4	Lilian Makau	Security Analyst	2	1	2026-08-14	56999.00	part_time	1
-\.
-
-
---
--- Data for Name: leave_requests; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.leave_requests (id, employee_id, start_date, end_date, days_requested, leave_type, reason, status, requested_at, decided_at, decided_by) FROM stdin;
-1	3	2026-07-28	2026-08-03	7	unpaid	Burial of my close relative	approved	2026-07-27 20:25:32.025477	2026-07-27 20:25:40.517429	\N
-2	4	2026-07-28	2026-09-25	60	paid	For maternal leave.	approved	2026-07-27 21:08:33.665898	2026-07-27 21:08:40.495084	\N
-\.
-
-
---
--- Data for Name: payroll_runs; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.payroll_runs (id, period_month, period_year, created_at) FROM stdin;
-1	4	2026	2026-07-27 20:26:01.768818
-\.
-
-
---
--- Data for Name: payslips; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.payslips (id, payroll_run_id, employee_id, gross_pay, unpaid_leave_days, tax_deduction, social_security_deduction, net_pay) FROM stdin;
-1	1	1	67999.00	0	9399.75	2160.00	56439.25
-2	1	2	56999.00	0	6649.75	2160.00	48189.25
-3	1	3	15000.00	0	0.00	900.00	14100.00
-4	1	4	56999.00	0	6649.75	2160.00	48189.25
-\.
-
-
---
--- Data for Name: teams; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.teams (id, name) FROM stdin;
-1	Networking Team
-2	Technical Team
-\.
-
-
---
--- Name: employees_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.employees_id_seq', 4, true);
-
-
---
--- Name: leave_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.leave_requests_id_seq', 2, true);
-
-
---
--- Name: payroll_runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.payroll_runs_id_seq', 1, true);
-
-
---
--- Name: payslips_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.payslips_id_seq', 4, true);
-
-
---
--- Name: teams_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.teams_id_seq', 2, true);
-
-
---
 -- Name: employees employees_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -434,5 +367,5 @@ ALTER TABLE ONLY public.payslips
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6TdC3e2DEhd4Bpg52TiW3QZ5fa9GnUZb22Ri6uypmdiJqySjIZkBudBU89LrGsa
+\unrestrict iJitMMFjrQFpDqU2CgjswtymW75JSAFgEoyNhyoycyYmkmoRGaH4itcLghHdg0W
 
