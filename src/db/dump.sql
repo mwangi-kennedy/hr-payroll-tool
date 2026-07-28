@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict iJitMMFjrQFpDqU2CgjswtymW75JSAFgEoyNhyoycyYmkmoRGaH4itcLghHdg0W
+\restrict WJUNB0cDORplrA6rYXPWMI9HwbGqcRif8sTFhTIoc3DmoweopjxcK7GwRp0xkKE
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 18.4
@@ -268,6 +268,99 @@ ALTER TABLE ONLY public.teams ALTER COLUMN id SET DEFAULT nextval('public.teams_
 
 
 --
+-- Data for Name: employees; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.employees (id, name, role, team_id, manager_id, start_date, salary, employment_type, is_active) FROM stdin;
+1	Test Employee	Engineer	1	\N	2026-01-01	50000.00	full_time	1
+2	Kennedy Mwangi	Software Developer	1	1	2026-07-28	67999.00	full_time	1
+3	Beatrice Gathoni	Trainer	3	\N	2026-07-27	78999.00	full_time	1
+4	Lilian Makau	Intern	3	3	2026-07-29	15000.00	contract	1
+5	Mohammed Iddih	Security Analyst	1	1	2026-07-22	56000.00	part_time	1
+\.
+
+
+--
+-- Data for Name: leave_requests; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.leave_requests (id, employee_id, start_date, end_date, days_requested, leave_type, reason, status, requested_at, decided_at, decided_by) FROM stdin;
+1	1	2026-07-29	2026-07-29	1	unpaid	\N	rejected	2026-07-28 08:24:23.696416	2026-07-28 08:26:36.968911	\N
+2	5	2026-07-28	2026-09-28	63	paid	For paternal leave	approved	2026-07-28 08:39:10.545989	2026-07-28 08:39:17.826771	\N
+\.
+
+
+--
+-- Data for Name: payroll_runs; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.payroll_runs (id, period_month, period_year, created_at) FROM stdin;
+1	1	2026	2026-07-28 08:39:32.607239
+2	7	2026	2026-07-28 08:40:43.987299
+\.
+
+
+--
+-- Data for Name: payslips; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.payslips (id, payroll_run_id, employee_id, gross_pay, unpaid_leave_days, tax_deduction, social_security_deduction, net_pay) FROM stdin;
+1	1	1	50000.00	0	4900.00	2160.00	42940.00
+2	2	1	50000.00	0	4900.00	2160.00	42940.00
+3	2	2	10967.58	0	0.00	658.05	10309.53
+4	2	3	15290.13	0	0.00	917.41	14372.72
+5	2	4	1935.48	0	0.00	116.13	1819.35
+6	2	5	19870.97	0	0.00	1192.26	18678.71
+\.
+
+
+--
+-- Data for Name: teams; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.teams (id, name) FROM stdin;
+1	Engineering
+2	Networking Team
+3	Marketing
+\.
+
+
+--
+-- Name: employees_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.employees_id_seq', 5, true);
+
+
+--
+-- Name: leave_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.leave_requests_id_seq', 2, true);
+
+
+--
+-- Name: payroll_runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.payroll_runs_id_seq', 2, true);
+
+
+--
+-- Name: payslips_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.payslips_id_seq', 6, true);
+
+
+--
+-- Name: teams_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.teams_id_seq', 3, true);
+
+
+--
 -- Name: employees employees_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -367,5 +460,5 @@ ALTER TABLE ONLY public.payslips
 -- PostgreSQL database dump complete
 --
 
-\unrestrict iJitMMFjrQFpDqU2CgjswtymW75JSAFgEoyNhyoycyYmkmoRGaH4itcLghHdg0W
+\unrestrict WJUNB0cDORplrA6rYXPWMI9HwbGqcRif8sTFhTIoc3DmoweopjxcK7GwRp0xkKE
 
