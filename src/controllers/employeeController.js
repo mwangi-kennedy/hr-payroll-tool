@@ -1,24 +1,32 @@
 const db = require('../db');
 
-function getAllEmployees(req, res) {
-    const employees = db.prepare('SELECT * FROM employees WHERE is_active = 1').all();
-    res.json(employees);
+async function getAllEmployees(req, res) {
+    try {
+        const { rows } = await db.query('SELECT * FROM employees WHERE is_active = 1 ORDER BY name ASC');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 }
 
-function createEmployee(req, res) {
+async function createEmployee(req, res) {
     const { name, role, team_id, manager_id, start_date, salary, employment_type } = req.body;
 
     if (!name || !role || !start_date || !salary || !employment_type) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const result = db.prepare(`
-        INSERT INTO employees (name, role, team_id, manager_id, start_date, salary, employment_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(name, role, team_id || null, manager_id || null, start_date, salary, employment_type);
+    try {
+        const { rows } = await db.query(`
+            INSERT INTO employees (name, role, team_id, manager_id, start_date, salary, employment_type)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING *
+        `, [name, role, team_id || null, manager_id || null, start_date, salary, employment_type]);
 
-    const newEmployee = db.prepare('SELECT * FROM employees WHERE id = ?').get(result.lastInsertRowid);
-    res.status(201).json(newEmployee);
+        res.status(201).json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 }
 
 function buildTree(employees, managerId = null) {
@@ -30,20 +38,30 @@ function buildTree(employees, managerId = null) {
         }));
 }
 
-function getOrgView(req, res) {
-    const employees = db.prepare('SELECT * FROM employees WHERE is_active = 1').all();
-    const tree = buildTree(employees, null);
-    res.json(tree);
+async function getOrgView(req, res) {
+    try {
+        const { rows } = await db.query('SELECT * FROM employees WHERE is_active = 1');
+        const tree = buildTree(rows, null);
+        res.json(tree);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 }
 
-function deactivateEmployee(req, res) {
+async function deactivateEmployee(req, res) {
     const { id } = req.params;
-    const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(id);
-    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+    try {
+        const { rows: existing } = await db.query('SELECT * FROM employees WHERE id = $1', [id]);
+        if (existing.length === 0) return res.status(404).json({ error: 'Employee not found' });
 
-    db.prepare('UPDATE employees SET is_active = 0 WHERE id = ?').run(id);
-    const updated = db.prepare('SELECT * FROM employees WHERE id = ?').get(id);
-    res.json(updated);
+        const { rows: updated } = await db.query(
+            'UPDATE employees SET is_active = 0 WHERE id = $1 RETURNING *',
+            [id]
+        );
+        res.json(updated[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 }
 
 module.exports = { getAllEmployees, createEmployee, getOrgView, deactivateEmployee };

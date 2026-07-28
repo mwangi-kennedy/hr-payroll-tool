@@ -1,7 +1,3 @@
 {
-  "functions": {
-    "**/*.[jt]s": {
-      "includeFiles": "src/db/database.db"
-    }
-  }
+  "version": 2
 }

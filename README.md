@@ -1,12 +1,13 @@
 # HR & Payroll Tool
 
-A small internal tool for managing employee records, leave requests and payroll replacing spreadsheet-and-WhatsApp workflows with a system that has real business logic behind it.
+A small implementable internal tool for managing employee records, leave requests and payroll replacing spreadsheet-and-WhatsApp workflows with a system that has real business logic behind it.
 
 ---
 
 ## What I Prioritized and Why
 
-The brief noted that one or two modules done properly beats three done shallowly. I chose to build all three at meaningful depth instead, because Leave and Payroll are explicitly required to interact, and I wanted that interaction to be real and tested rather than stubbed. Within that scope, backend business logic,  the part the brief identifies as the core of the exercise was prioritized over frontend visual design: the API is fully functional, tested and handles every named edge case; the dashboard is functional and covers every required view, but is intentionally simple rather than elaborate.
+The brief noted that one or two modules done properly beats three done shallowly. I chose to build all three at meaningful depth because Leave and Payroll are explicitly required to interact and I wanted that interaction to be real and thoroughly tested rather than stubbed. 
+Within that scope, backend business logic—the core of the exercise was prioritized over frontend visual design. The API is fully functional, handles every named edge case, and includes unit/integration tests. The frontend dashboard covers every required view with clean, functional UI and loading states.
 
 ---
 
@@ -15,15 +16,19 @@ The brief noted that one or two modules done properly beats three done shallowly
 | Layer | Choice |
 |---|---|
 | Backend | Express (Node.js) |
-| Frontend | HTML / CSS / JS |
-| Database | SQLite (`better-sqlite3`) |
+| Frontend | HTML / CSS / Vanilla JavaScript |
+| Database | PostgreSQL (`pg` driver + Supabase) |
 | Testing | Jest + Supertest |
 
 ---
 
 ## Architecture & Approach
 
-The backend follows a simple layered structure: routes handle HTTP concerns, controllers contain request/response logic and a `services/` layer holds pure business logic (tax calculation, leave-rule thresholds) kept separate from database and HTTP code so it can be unit tested directly, without spinning up a server.
+The backend follows a layered structure:
+- **Routes (`src/routes/`):** Handle HTTP endpoints and request routing.
+- **Controllers (`src/controllers/`):** Manage request validation and HTTP responses.
+- **Services (`src/services/`):** Pure, isolated business logic (tax calculations, leave rule thresholds) kept separate from HTTP and database concerns for direct unit testing.
+- **Database (`src/db/`):** Connection pooler setup using `pg` connecting directly to PostgreSQL / Supabase.
 
 ```
 HR-PAYROLL-TOOL/
@@ -61,9 +66,9 @@ The frontend is a single-page dashboard with tab-based navigation, calling the A
 
 ### 1. Employee Records
 
-Employees are stored with name, role, team, manager, start date, salary and employment type. Managers are modeled as a self-referencing relationship (`manager_id` → `employees.id`), which powers a nested org view showing who reports to whom.
-
-Employees are **deactivated, not deleted** a status flag (`is_active`) is flipped rather than removing the row, so that payroll history generated before deactivation remains intact and queryable. This is verified directly in the submitted sample data: a deactivated employee's payslip from before their deactivation is still present and retrievable.
+- **Data Model:** Name, role, team, manager, start date, salary, and employment type.
+- **Org View:** Managers are modeled as a self-referencing relationship (`manager_id` → `employees.id`), powering a nested organizational tree view.
+- **Soft Deletion:** Employees are **deactivated, not deleted** (`is_active = 0`). This ensures historical payroll and leave records persist for audit compliance.
 
 ### 2. Leave Management
 
@@ -136,13 +141,11 @@ npm install
 
 Create a `.env` file in the project root:
 ```
-DB_PATH=./src/db/database.db
+DATABASE_URL
 ```
 Create the database schema:
 ```bash
-npm install
-sqlite3 src/db/database.db < db/dump.sql
-npm run dev
+psql "$DATABASE_URL" < db/dump.sql
 ```
 
 **Optional — load the submitted sample data** (a few employees/teams, leave requests in different states, one generated payroll run) instead of starting empty:
@@ -201,8 +204,7 @@ npm test
 
 ## What I'd Improve With More Time
 
-- Leave balances currently use a fixed annual allocation rather than true accrual over time
-- Tax brackets and social security rate are hardcoded rather than configurable
-- No authentication/roles, any client can currently call any endpoint
+- Accrual-Based Leave: Shift from fixed annual leave allocations to monthly accrual tracking.
+- Configurable Tax Brackets: Move tax brackets and social security thresholds out of service logic into database configuration tables.
+- Role-Based Authentication: Implement JWT-based auth separating manager approval endpoints from regular employee views.
 - PDF payslip export instead of CSV, for a more polished offline document
-- The team-coverage threshold (50%) is fixed rather than configurable per team

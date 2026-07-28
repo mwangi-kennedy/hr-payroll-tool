@@ -1,51 +1,49 @@
 CREATE TABLE IF NOT EXISTS teams (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS employees (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    role TEXT NOT NULL,
-    team_id INTEGER REFERENCES teams(id),
-    manager_id INTEGER REFERENCES employees(id),
-    start_date TEXT NOT NULL,
-    salary REAL NOT NULL,
-    employment_type TEXT NOT NULL CHECK (employment_type IN ('full_time','part_time','contract')),
-    is_active INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    role VARCHAR(255) NOT NULL,
+    team_id INT REFERENCES teams(id) ON DELETE SET NULL,
+    manager_id INT REFERENCES employees(id) ON DELETE SET NULL,
+    start_date DATE NOT NULL,
+    salary NUMERIC(12, 2) NOT NULL,
+    employment_type VARCHAR(50) NOT NULL,
+    is_active INT DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS leave_requests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    employee_id INTEGER NOT NULL REFERENCES employees(id),
-    start_date TEXT NOT NULL,
-    end_date TEXT NOT NULL,
-    days_requested INTEGER NOT NULL,
-    leave_type TEXT NOT NULL CHECK (leave_type IN ('paid','unpaid')),
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+    id SERIAL PRIMARY KEY,
+    employee_id INT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    days_requested INT NOT NULL,
+    leave_type VARCHAR(50) NOT NULL,
     reason TEXT,
-    requested_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    decided_at TEXT,
-    decided_by INTEGER REFERENCES employees(id)
+    status VARCHAR(20) DEFAULT 'pending',
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    decided_at TIMESTAMP,
+    decided_by VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS payroll_runs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    period_month INTEGER NOT NULL,
-    period_year INTEGER NOT NULL,
-    generated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    id SERIAL PRIMARY KEY,
+    period_month INT NOT NULL,
+    period_year INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(period_month, period_year)
 );
 
 CREATE TABLE IF NOT EXISTS payslips (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    payroll_run_id INTEGER NOT NULL REFERENCES payroll_runs(id),
-    employee_id INTEGER NOT NULL REFERENCES employees(id),
-    gross_pay REAL NOT NULL,
-    unpaid_leave_days INTEGER NOT NULL DEFAULT 0,
-    tax_deduction REAL NOT NULL,
-    social_security_deduction REAL NOT NULL,
-    net_pay REAL NOT NULL,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    payroll_run_id INT NOT NULL REFERENCES payroll_runs(id) ON DELETE CASCADE,
+    employee_id INT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    gross_pay NUMERIC(12, 2) NOT NULL,
+    unpaid_leave_days INT DEFAULT 0,
+    tax_deduction NUMERIC(12, 2) NOT NULL,
+    social_security_deduction NUMERIC(12, 2) NOT NULL,
+    net_pay NUMERIC(12, 2) NOT NULL
 );

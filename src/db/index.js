@@ -1,20 +1,14 @@
 require('dotenv').config();
-const Database = require('better-sqlite3');
-const path = require('path');
+const { Pool } = require('pg');
 
-const envPath = process.env.DB_PATH;
-let resolvedPath;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL?.includes('sslmode=require') 
+    ? { rejectUnauthorized: false } 
+    : false
+});
 
-if (envPath === ':memory:') {
-  resolvedPath = ':memory:';
-} else if (envPath) {
-  resolvedPath = path.resolve(envPath);
-} else {
-  resolvedPath = path.join(process.cwd(), 'src', 'db', 'database.db');
-}
-
-const db = new Database(resolvedPath, { readonly: true, fileMustExist: true });
-
-db.pragma('foreign_keys = ON');
-
-module.exports = db;
+module.exports = {
+  query: (text, params) => pool.query(text, params),
+  pool
+};
