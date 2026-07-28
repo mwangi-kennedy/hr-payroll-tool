@@ -7,7 +7,8 @@ A small implementable internal tool for managing employee records, leave request
 ## What I Prioritized and Why
 
 The brief noted that one or two modules done properly beats three done shallowly. I chose to build all three at meaningful depth because Leave and Payroll are explicitly required to interact and I wanted that interaction to be real and thoroughly tested rather than stubbed. 
-Within that scope, backend business logic—the core of the exercise was prioritized over frontend visual design. The API is fully functional, handles every named edge case, and includes unit/integration tests. The frontend dashboard covers every required view with clean, functional UI and loading states.
+
+Within that scope, backend business logic the core of the exercise was prioritized over frontend visual design. The API is fully functional, handles every named edge case, and includes unit/integration tests. The frontend dashboard covers every required view with clean, functional UI and loading states.
 
 ---
 
@@ -115,7 +116,7 @@ Generates one payslip per active employee for a given month/year: gross pay, sta
 A single dashboard covering:
 - **Pending approvals**, with inline approve/reject controls
 - **Who's out**, showing current and upcoming approved leave
-- - **Employees**, displaying a list of employees, adding an employee and thier team
+- **Employees**, displaying a list of employees, adding an employee and thier team
 - **Leave balances** per employee (fixed annual allocation minus approved paid leave taken)
 - **Payslips for a selected period**, with a form to generate a new payroll run
 
